@@ -1,0 +1,45 @@
+filebeat.inputs:
+- type: docker
+  combine_partial: true
+  containers:
+    ids: '*'
+    stream: "stdout"
+  #hints.enabled: true
+  #hints.default_config:
+  #type: container
+    paths:
+      - '/var/lib/docker/containers/*/*.log'
+  cri.force: false
+  encoding: 'plain'
+  cri.parse_flag: true
+  #co.elastic.logs/module: nginx
+  #co.elastic.logs/fileste.stdout: access
+  #co.elastic.logs/fileset.stderr: error
+  #co.elastic.logs/json.keys_under_root: true
+  #co.elastic.logs/json.add_error_key: true
+  # co.elastic.logs/json.messahe_key: log
+  # combine_partial: true
+      #json.keys_under_root: true
+      #json.overwrite_keys: true
+      #json.message_key: 'message'
+  multiline.pattern: '^{'
+  mutiline.negate: true
+  multiline.match: after
+
+
+processors:
+- add_docker_metadata:
+    host: "unix:///var/run/docker.sock"
+
+- decode_json_fields:
+    fields: ["message"]
+    target: ""
+    overwrite_keys: true
+
+output.elasticsearch:
+  hosts: ["178.62.63.208:9200"]
+  indices:
+    - index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+logging.json: true
+logging.metrics.enabled: false
